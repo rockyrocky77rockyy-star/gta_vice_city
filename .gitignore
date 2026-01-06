@@ -9,3 +9,5 @@ vcsky/
 saves/
 unpacked/
 *.bin
+
+venv/
