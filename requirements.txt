@@ -1,6 +1,6 @@
 fastapi
-# httpx
+httpx
 uvicorn
 brotli
-# python-multipart
+python-multipart
 aiofiles
