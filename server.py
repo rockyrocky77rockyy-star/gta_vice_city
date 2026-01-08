@@ -349,6 +349,10 @@ async def vc_sky_proxy(request: Request, path: str):
         return await proxy_and_cache(request, url, cache_path)
     return await proxy_and_cache(request, url, disable_cache=True)
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 
 # vcbr routes - packed archive, local, or proxy
 @app.api_route("/vcbr/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"])
