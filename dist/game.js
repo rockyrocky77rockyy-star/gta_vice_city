@@ -472,14 +472,18 @@ clickToPlay.addEventListener('click', (e) => {
     }
     if (e.target === clickToPlay || e.target === clickLink) {
         startGame(e);
-        if (!isMobile && autoFullScreen) {
-            if (window.top === window) {
-                document.body.requestFullscreen(document.documentElement);
-            } else {
-                window.top.postMessage({
-                    event: 'request-fullscreen',
-                }, '*');
-            }
+         if (autoFullScreen && !/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+             const el = document.documentElement;
+             if (el.requestFullscreen) {
+                 el.requestFullscreen().catch(() => {
+                     console.warn("Fullscreen failed");
+                 });
+             } else if (el.webkitRequestFullscreen) { // Safari/older iOS (won't work fully)
+                 el.webkitRequestFullscreen();
+             }
+             if (window.top !== window) {
+                 window.top.postMessage({ event: 'request-fullscreen' }, '*');
+             }
             function lockMouseIfNeeded() {
                 if (!document.pointerLockElement && typeof Module !== 'undefined' && Module.canvas) {
                     Module.canvas.requestPointerLock({
