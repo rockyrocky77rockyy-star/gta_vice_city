@@ -2,6 +2,9 @@ import os
 import sys
 import asyncio
 import argparse
+import tempfile
+import zipfile
+import requests
 import hashlib
 from typing import Optional
 from fastapi import FastAPI, Request, HTTPException
@@ -100,18 +103,44 @@ def _check_unpacked_exists(unpacked_dir: str) -> bool:
 
 async def _unpack_from_url(url: str, output_dir: str) -> bool:
     """
-    Unpack archive directly from URL using streaming download.
-    Uses downloader_brotli for efficient stream unpacking.
+    Unpack archive from URL.
+    - .zip → binary download + zipfile extract
+    - others (.bin) → downloader_brotli
     """
     try:
-        from utils.downloader_brotli import download_and_unpack_async
         print(f"Streaming and unpacking from URL: {url}")
         print(f"Output directory: {output_dir}")
+
+        # ZIP handling
+        if url.lower().endswith(".zip"):
+            os.makedirs(output_dir, exist_ok=True)
+
+            with requests.get(url, stream=True) as r:
+                r.raise_for_status()
+
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".zip") as f:
+                    for chunk in r.iter_content(chunk_size=1024 * 1024):
+                        if chunk:
+                            f.write(chunk)
+                    zip_path = f.name
+
+            print(f"ZIP downloaded → extracting")
+            with zipfile.ZipFile(zip_path, "r") as z:
+                z.extractall(output_dir)
+
+            os.remove(zip_path)
+            print("ZIP unpack complete")
+            return True
+
+        # Brotli-packed archive (.bin)
+        from utils.downloader_brotli import download_and_unpack_async
         await download_and_unpack_async(url, output_dir)
         return True
+
     except Exception as e:
         print(f"Error unpacking from URL: {e}")
         return False
+
 
 
 async def _unpack_from_file(file_path: str, output_dir: str) -> bool:
